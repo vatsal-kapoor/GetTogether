@@ -1,3 +1,70 @@
+# GetTogether Application
+
+A React application for connecting friends and making plans together.
+
+## Features
+
+- Landing page with options to create or join groups
+- Suggestions page with a map and place recommendations
+- Google Maps integration for location-based suggestions
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+- Google Maps API key
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/gettogether.git
+   cd gettogether
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Install the Google Maps React library:
+   ```
+   npm install @react-google-maps/api
+   ```
+
+4. Set up your Google Maps API key:
+   - Go to the [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Maps JavaScript API
+   - Create credentials (API key)
+   - Restrict the API key to your domain for security
+   - Replace `YOUR_GOOGLE_MAPS_API_KEY` in `src/config.js` with your actual API key
+
+5. Start the development server:
+   ```
+   npm start
+   ```
+
+## Project Structure
+
+- `src/LandingPage.js` - The landing page component
+- `src/Suggestions.js` - The suggestions page with map integration
+- `src/config.js` - Configuration file for API keys and settings
+
+## Google Maps Integration
+
+The application uses the Google Maps JavaScript API to display a map with markers for suggested locations. To implement this:
+
+1. Get a Google Maps API key from the Google Cloud Console
+2. Update the `GOOGLE_MAPS_API_KEY` in `src/config.js`
+3. The map will display a marker at the default location (San Francisco)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
