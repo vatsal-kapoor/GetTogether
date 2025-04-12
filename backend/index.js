@@ -1,11 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const axios = require('axios');
 const app = express();
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 app.use(express.json()); 
+app.use(express.json()); // So Express know you're using JSON
+const cors = require('cors');
 app.use(cors());
 
 const uri = "mongodb+srv://vatsalkpr:GetTogether%40Hackabull25@gettogether.zlhzkty.mongodb.net/?appName=GetTogether";
@@ -197,5 +200,48 @@ app.get('/demo-object', (request, response) => {
 
 app.listen(3000, () => {
     console.log(`Server is running on http://localhost:${3000}`);
+
+// New endpoint to find nearby places
+app.get('/api/nearby-places', async (req, res) => {
+    try {
+        const { lat = 37.7749, lng = -122.4194, radius = 1500 } = req.query;
+        const apiKey = 'AIzaSyBkP7i-whASB7_Db9q8E9zSsNqCl2wpdYI';
+        
+        const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
+            params: {
+                location: `${lat},${lng}`,
+                radius: radius,
+                type: 'establishment',
+                key: apiKey
+            }
+        });
+
+        // Process the response to include only relevant information
+        const places = response.data.results.map(place => ({
+            name: place.name,
+            address: place.vicinity,
+            location: place.geometry.location,
+            rating: place.rating,
+            types: place.types,
+            place_id: place.place_id
+        }));
+
+        res.json({
+            status: 'success',
+            results: places
+        });
+    } catch (error) {
+        console.error('Error fetching nearby places:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch nearby places'
+        });
+    }
+});
+
+
+
+app.listen(8080, () => {
+    console.log(`Server is running on http://localhost:${8080}`);
   });
   
