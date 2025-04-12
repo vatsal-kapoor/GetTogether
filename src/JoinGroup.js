@@ -1,34 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import './JoinGroup.css';
 
 const JoinGroup = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
-  const [userName, setUserName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setIsLoading(true);
 
     try {
       const response = await fetch('http://localhost:3000/join-group', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          inviteCode,
-          userName
-        }),
+        body: JSON.stringify({ inviteCode })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to join group');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to join group');
       }
 
       setSuccess(true);
@@ -37,7 +37,7 @@ const JoinGroup = () => {
         navigate('/suggestions');
       }, 2000);
     } catch (err) {
-      setError(err.message || 'An error occurred while joining the group');
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -61,22 +61,9 @@ const JoinGroup = () => {
               type="text"
               id="inviteCode"
               value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
               required
               placeholder="Enter invite code"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="userName">Your Name</label>
-            <input
-              type="text"
-              id="userName"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              required
-              placeholder="Enter your name"
               disabled={isLoading}
             />
           </div>

@@ -1,42 +1,40 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import './CreateGroup.css';
 
 const CreateGroup = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [groupName, setGroupName] = useState('');
-  const [description, setDescription] = useState('');
-  const [creatorName, setCreatorName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setIsLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/create-group/${groupName}/${creatorName}`, {
+      const response = await fetch('http://localhost:3000/create-group', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          name: groupName,
-          description,
-          creatorName,
-        }),
+        body: JSON.stringify({ groupName })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create group');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create group');
       }
 
       const data = await response.json();
-      setInviteCode(data.inviteCode);
+      setInviteCode(data.group.inviteCode);
     } catch (err) {
-      setError(err.message || 'An error occurred while creating the group');
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -70,32 +68,6 @@ const CreateGroup = () => {
               onChange={(e) => setGroupName(e.target.value)}
               required
               placeholder="Enter group name"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              placeholder="Describe your group"
-              rows="4"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="creatorName">Your Name</label>
-            <input
-              type="text"
-              id="creatorName"
-              value={creatorName}
-              onChange={(e) => setCreatorName(e.target.value)}
-              required
-              placeholder="Enter your name"
               disabled={isLoading}
             />
           </div>

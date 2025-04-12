@@ -8,7 +8,8 @@ const SignIn = () => {
   const { login } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
@@ -28,10 +29,17 @@ const SignIn = () => {
     setError('');
     setIsLoading(true);
 
-    if (isSignUp && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
+    if (isSignUp) {
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.name) {
+        setError('Name is required');
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
@@ -42,17 +50,19 @@ const SignIn = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: formData.username,
+          name: formData.name,
+          email: formData.email,
           password: formData.password
         }),
       });
 
       if (!response.ok) {
-        throw new Error(isSignUp ? 'Failed to sign up' : 'Failed to sign in');
+        const errorData = await response.json();
+        throw new Error(errorData.error || (isSignUp ? 'Failed to sign up' : 'Failed to sign in'));
       }
 
       const data = await response.json();
-      login(data);
+      login(data.user, data.token);
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -67,16 +77,32 @@ const SignIn = () => {
       {error && <div className="error-message">{error}</div>}
       
       <form onSubmit={handleSubmit} className="signin-form">
+        {isSignUp && (
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              placeholder="Enter your name"
+              disabled={isLoading}
+            />
+          </div>
+        )}
+        
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+          <label htmlFor="email">Email</label>
           <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
             onChange={handleChange}
             required
-            placeholder="Enter username"
+            placeholder="Enter your email"
             disabled={isLoading}
           />
         </div>

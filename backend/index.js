@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 app.use(express.json()); 
 app.use(express.json()); // So Express know you're using JSON
-const cors = require('cors');
+
 app.use(cors());
 
 const uri = "mongodb+srv://vatsalkpr:GetTogether%40Hackabull25@gettogether.zlhzkty.mongodb.net/?appName=GetTogether";
@@ -22,9 +22,26 @@ mongoose.connect(uri, {
 
 // User Schema
 const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
+    uid: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    groups: [{ type: String }], // Array of group invite codes
     createdAt: { type: Date, default: Date.now }
+});
+
+// Remove any existing indexes first
+mongoose.connection.on('connected', async () => {
+    try {
+        // Drop the old username index if it exists
+        await mongoose.connection.db.collection('users').dropIndex('username_1').catch(() => {});
+        
+        // Create new indexes
+        await User.createIndexes();
+        console.log('Indexes created successfully');
+    } catch (error) {
+        console.error('Error setting up indexes:', error);
+    }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -32,7 +49,8 @@ const User = mongoose.model('User', UserSchema);
 const GroupSchema = new mongoose.Schema({
     inviteCode: { type: String, required: true, unique: true },
     groupName: { type: String, required: true },
-    members: [String], // Array of member names
+    members: [{ type: String, ref: 'User' }], // Array of member UIDs
+    createdAt: { type: Date, default: Date.now }
 });
 
 const Group = mongoose.model('Group', GroupSchema);
@@ -60,36 +78,47 @@ const authenticateToken = (req, res, next) => {
 
 // Sign Up endpoint
 app.post('/signup', async (req, res) => {
+    const { name, email, password } = req.body;
+    
     try {
-        const { username, password } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ username });
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ error: 'Username already exists' });
+            return res.status(400).json({ error: 'Email already exists' });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
+        const uid = uuidv4();
+        
         const newUser = new User({
-            username,
+            uid,
+            name,
+            email,
             password: hashedPassword
         });
 
         await newUser.save();
-
-        // Generate JWT token
-        const token = jwt.sign({ username: newUser.username }, JWT_SECRET);
-
-        res.status(201).json({
-            message: 'User created successfully',
+        
+        const token = jwt.sign({ uid }, JWT_SECRET, { expiresIn: '24h' });
+        res.json({ 
             token,
-            user: { username: newUser.username }
+            user: {
+                uid: newUser.uid,
+                name: newUser.name,
+                email: newUser.email
+            }
         });
     } catch (error) {
         console.error('Signup error:', error);
+        if (error.code === 11000) {
+            // Handle duplicate key error
+            if (error.keyPattern && error.keyPattern.email) {
+                return res.status(400).json({ error: 'Email already exists' });
+            }
+            if (error.keyPattern && error.keyPattern.uid) {
+                return res.status(500).json({ error: 'Error creating user. Please try again.' });
+            }
+        }
         res.status(500).json({ error: 'Failed to create user' });
     }
 });
@@ -97,27 +126,32 @@ app.post('/signup', async (req, res) => {
 // Sign In endpoint
 app.post('/signin', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
-        // Find user
-        const user = await User.findOne({ username });
+        // Find user by email
+        const user = await User.findOne({ email });
+        
         if (!user) {
-            return res.status(401).json({ error: 'Invalid username or password' });
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid username or password' });
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Generate JWT token
-        const token = jwt.sign({ username: user.username }, JWT_SECRET);
+        // Generate JWT token with uid
+        const token = jwt.sign({ uid: user.uid }, JWT_SECRET);
 
         res.json({
             message: 'Sign in successful',
             token,
-            user: { username: user.username }
+            user: { 
+                uid: user.uid,
+                name: user.name,
+                email: user.email
+            }
         });
     } catch (error) {
         console.error('Signin error:', error);
@@ -143,42 +177,135 @@ app.post('/demo-object', (request, response) => {
   return body;
 });
 
-app.post('/create-group/:groupName/:creatorName', async (req, res) => {
-    const { groupName, creatorName } = req.params;
+app.post('/create-group', authenticateToken, async (req, res) => {
+    const { groupName } = req.body;
+    const creatorUid = req.user.uid;
     const inviteCode = uuidv4().slice(0, 6).toUpperCase();
 
-    const newGroup = new Group({
-        groupName,
-        members: [creatorName],
-        inviteCode
-    });
-
     try {
+        const newGroup = new Group({
+            groupName,
+            members: [creatorUid],
+            inviteCode
+        });
+
         await newGroup.save();
-        res.json({ inviteCode });
+
+        // Add the group to the creator's groups array
+        const creator = await User.findOne({ uid: creatorUid });
+        
+        creator.groups.push(inviteCode);
+        await creator.save();
+        
+
+        res.json({ 
+            success: true, 
+            group: {
+                inviteCode: newGroup.inviteCode,
+                groupName: newGroup.groupName,
+                members: newGroup.members
+            }
+        });
     } catch (error) {
         console.error('Error saving group:', error);
         res.status(500).json({ error: 'Failed to create group' });
     }
 });
 
-app.post('/join-group', async (req, res) => {
-    const { inviteCode, userName } = req.body;
+app.post('/join-group', authenticateToken, async (req, res) => {
+    const { inviteCode } = req.body;
+    const userUid = req.user.uid;
   
     try {
-      const group = await Group.findOne({ inviteCode });
+        const group = await Group.findOne({ inviteCode });
+        const user = await User.findOne({ uid: userUid });
   
-      if (!group) {
-        return res.status(404).json({ error: 'Invalid invite code' });
-      }
+        if (!group) {
+            return res.status(404).json({ error: 'Invalid invite code' });
+        }
+
+        if (group.members.includes(userUid)) {
+            return res.status(400).json({ error: 'You are already a member of this group' });
+        }
   
-      group.members.push(userName);
-      await group.save();
+        // Add user to group's members
+        group.members.push(userUid);
+        await group.save();
+
+        // Add group to user's groups
+        user.groups.push(inviteCode);
+        await user.save();
   
-      res.json({ success: true, group });
+        res.json({ 
+            success: true, 
+            group: {
+                inviteCode: group.inviteCode,
+                groupName: group.groupName,
+                members: group.members
+            }
+        });
     } catch (error) {
-      console.error('Error joining group:', error);
-      res.status(500).json({ error: 'Something went wrong' });
+        console.error('Error joining group:', error);
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+});
+
+// Add a new endpoint to get user's groups
+app.get('/user-groups', authenticateToken, async (req, res) => {
+    const userUid = req.user.uid;
+    
+    try {
+        const user = await User.findOne({ uid: userUid });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Get all groups where the user is a member
+        const groups = await Group.find({ inviteCode: { $in: user.groups } });
+        
+        res.json({
+            success: true,
+            groups: groups.map(group => ({
+                inviteCode: group.inviteCode,
+                groupName: group.groupName,
+                members: group.members
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching user groups:', error);
+        res.status(500).json({ error: 'Failed to fetch user groups' });
+    }
+});
+
+// Add a new endpoint to get group details with member information
+app.get('/group/:inviteCode', authenticateToken, async (req, res) => {
+    const { inviteCode } = req.params;
+    
+    try {
+        const group = await Group.findOne({ inviteCode });
+        
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // Get member details
+        const members = await User.find({ uid: { $in: group.members } }, 'uid name email');
+        
+        res.json({
+            success: true,
+            group: {
+                inviteCode: group.inviteCode,
+                groupName: group.groupName,
+                members: members.map(member => ({
+                    uid: member.uid,
+                    name: member.name,
+                    email: member.email
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching group:', error);
+        res.status(500).json({ error: 'Failed to fetch group details' });
     }
 });
 
@@ -237,7 +364,10 @@ app.get('/api/nearby-places', async (req, res) => {
     }
 });
 
-
+// Token verification endpoint
+app.get('/verify-token', authenticateToken, (req, res) => {
+  res.json({ valid: true, user: req.user });
+});
 
 app.listen(3000, () => {
     console.log(`Server is running on http://localhost:${3000}`);

@@ -17,7 +17,7 @@ function Suggestions() {
   useEffect(() => {
     const fetchPlaces = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/nearby-places');
+        const response = await fetch('http://localhost:3000/api/nearby-places');
         const data = await response.json();
         setPlaces(data.results);
       } catch (error) {
