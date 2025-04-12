@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import LandingPage from './LandingPage';
 import Suggestions from './Suggestions';
+import CreateGroup from './CreateGroup';
+import JoinGroup from './JoinGroup';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -13,6 +15,8 @@ root.render(
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
+        <Route path="/create-group" element={<CreateGroup />} />
+        <Route path="/join-group" element={<JoinGroup />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

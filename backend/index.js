@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
+const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
-app.use(express.json()); // So Express know you're using JSON
+app.use(express.json()); 
+app.use(cors());
 
 const uri = "mongodb+srv://vatsalkpr:GetTogether%40Hackabull25@gettogether.zlhzkty.mongodb.net/?appName=GetTogether";
 
@@ -61,7 +63,7 @@ app.post('/create-group/:groupName/:creatorName', async (req, res) => {
 
 
 app.post('/join-group', async (req, res) => {
-    const { inviteCode, name } = req.body;
+    const { inviteCode, userName } = req.body;
   
     try {
       const group = await Group.findOne({ inviteCode });
@@ -70,7 +72,7 @@ app.post('/join-group', async (req, res) => {
         return res.status(404).json({ error: 'Invalid invite code' });
       }
   
-      group.members.push(name); // Add new member
+      group.members.push(userName); // Add new member
       await group.save(); // Save updated document
   
       res.json({ success: true, group });
