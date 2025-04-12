@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { GOOGLE_MAPS_API_KEY, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from './config';
@@ -12,6 +12,21 @@ const mapContainerStyle = {
 
 function Suggestions() {
   const navigate = useNavigate();
+  const [places, setPlaces] = useState([]);
+
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/nearby-places');
+        const data = await response.json();
+        setPlaces(data.results);
+      } catch (error) {
+        console.error('Error fetching places:', error);
+      }
+    };
+
+    fetchPlaces();
+  }, []);
 
   const handleBackToHome = () => {
     navigate('/');
@@ -45,45 +60,20 @@ function Suggestions() {
         </div>
         
         <div className="suggestions-list">
-          {/* Sample suggestion items */}
-          <div className="suggestion-item">
-            <div className="suggestion-image restaurant"></div>
-            <div className="suggestion-details">
-              <h3>Gourmet Bistro</h3>
-              <p className="suggestion-type">Restaurant</p>
-              <p className="suggestion-description">Upscale dining with a modern twist</p>
-              <div className="suggestion-meta">
-                <span className="rating">4.5 ★</span>
-                <span className="distance">0.3 miles</span>
+          {places.map((place, index) => (
+            <div key={place.place_id || index} className="suggestion-item">
+              <div className={`suggestion-image ${place.types[0] || 'default'}`}></div>
+              <div className="suggestion-details">
+                <h3>{place.name}</h3>
+                <p className="suggestion-type">{place.types[0] || 'Establishment'}</p>
+                <p className="suggestion-description">{place.address}</p>
+                <div className="suggestion-meta">
+                  {place.rating && <span className="rating">{place.rating} ★</span>}
+                  <span className="distance">Nearby</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="suggestion-item">
-            <div className="suggestion-image activity"></div>
-            <div className="suggestion-details">
-              <h3>Escape Room Challenge</h3>
-              <p className="suggestion-type">Activity</p>
-              <p className="suggestion-description">Solve puzzles and escape in 60 minutes</p>
-              <div className="suggestion-meta">
-                <span className="rating">4.8 ★</span>
-                <span className="distance">0.7 miles</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="suggestion-item">
-            <div className="suggestion-image entertainment"></div>
-            <div className="suggestion-details">
-              <h3>Comedy Club</h3>
-              <p className="suggestion-type">Entertainment</p>
-              <p className="suggestion-description">Live stand-up comedy every weekend</p>
-              <div className="suggestion-meta">
-                <span className="rating">4.2 ★</span>
-                <span className="distance">0.5 miles</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
       
@@ -95,7 +85,13 @@ function Suggestions() {
             center={DEFAULT_MAP_CENTER}
             zoom={DEFAULT_MAP_ZOOM}
           >
-            <Marker position={DEFAULT_MAP_CENTER} />
+            {places.map((place) => (
+              <Marker
+                key={place.place_id}
+                position={place.location}
+                title={place.name}
+              />
+            ))}
           </GoogleMap>
         </LoadScript>
       </div>
