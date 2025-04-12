@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { GOOGLE_MAPS_API_KEY, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from './config';
 import './Suggestions.css';
@@ -10,11 +11,22 @@ const mapContainerStyle = {
 };
 
 function Suggestions() {
+  const navigate = useNavigate();
+
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="suggestions-container">
       {/* Left side - Suggestions */}
       <div className="suggestions-panel">
-        <h1 className="suggestions-title">Suggestions</h1>
+        <div className="suggestions-header">
+          <h1 className="suggestions-title">Suggestions</h1>
+          <button className="back-button" onClick={handleBackToHome}>
+            Back to Home
+          </button>
+        </div>
         
         <div className="search-container">
           <input 
