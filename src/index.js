@@ -6,19 +6,41 @@ import LandingPage from './LandingPage';
 import Suggestions from './Suggestions';
 import CreateGroup from './CreateGroup';
 import JoinGroup from './JoinGroup';
+import SignIn from './SignIn';
+import ProtectedRoute from './ProtectedRoute';
+import { AuthProvider } from './AuthContext';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/suggestions" element={<Suggestions />} />
-        <Route path="/create-group" element={<CreateGroup />} />
-        <Route path="/join-group" element={<JoinGroup />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <LandingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/suggestions" element={
+            <ProtectedRoute>
+              <Suggestions />
+            </ProtectedRoute>
+          } />
+          <Route path="/create-group" element={
+            <ProtectedRoute>
+              <CreateGroup />
+            </ProtectedRoute>
+          } />
+          <Route path="/join-group" element={
+            <ProtectedRoute>
+              <JoinGroup />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   </React.StrictMode>
 );
 

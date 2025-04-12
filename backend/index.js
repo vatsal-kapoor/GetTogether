@@ -198,8 +198,6 @@ app.get('/demo-object', (request, response) => {
   response.json(query);
 });
 
-app.listen(3000, () => {
-    console.log(`Server is running on http://localhost:${3000}`);
 
 // New endpoint to find nearby places
 app.get('/api/nearby-places', async (req, res) => {
@@ -241,7 +239,6 @@ app.get('/api/nearby-places', async (req, res) => {
 
 
 
-app.listen(8080, () => {
-    console.log(`Server is running on http://localhost:${8080}`);
+app.listen(3000, () => {
+    console.log(`Server is running on http://localhost:${3000}`);
   });
-  
