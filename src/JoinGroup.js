@@ -25,7 +25,7 @@ const JoinGroup = () => {
         },
         body: JSON.stringify({
           inviteCode,
-          userId: user.uid
+          _id: user._id
         }),
       });
 

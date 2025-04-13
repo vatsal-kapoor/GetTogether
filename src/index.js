@@ -38,6 +38,11 @@ root.render(
               <JoinGroup />
             </ProtectedRoute>
           } />
+          <Route path="/suggestions/:groupId" element={
+            <ProtectedRoute>
+              <Suggestions />
+            </ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

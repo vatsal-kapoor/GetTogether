@@ -41,6 +41,7 @@ const UserProfile = () => {
 
       const data = await response.json();
       setUserGroups(data.groups);
+
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
@@ -79,8 +80,13 @@ const UserProfile = () => {
               <ul className="groups-list">
                 {userGroups.map(group => (
                   <li key={group.inviteCode} className="group-item">
-                    <span className="group-name">{group.groupName}</span>
-                    <span className="group-code">{group.inviteCode}</span>
+                    <a 
+                      href={`http://localhost:3001/suggestions/${group._id}`}
+                      className="group-link"
+                    >
+                      <span className="group-name">{group.groupName}</span>
+                      <span className="group-code">{group.inviteCode}</span>
+                    </a>
                   </li>
                 ))}
               </ul>

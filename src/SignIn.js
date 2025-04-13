@@ -24,6 +24,7 @@ const SignIn = () => {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: 'AIzaSyBkP7i-whASB7_Db9q8E9zSsNqCl2wpdYI',
     libraries: ['places'],
+    version: 'weekly',
   });
 
   const onPlaceChanged = () => {

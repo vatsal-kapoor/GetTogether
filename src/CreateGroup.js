@@ -25,7 +25,7 @@ const CreateGroup = () => {
         },
         body: JSON.stringify({ 
           groupName,
-          createdBy: user.uid 
+          createdBy: user._id
         })
       });
 

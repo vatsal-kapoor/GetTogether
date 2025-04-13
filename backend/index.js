@@ -5,6 +5,7 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { getNearbyPlaces, getCentroid } = require('./suggestor');
 
 const app = express();
 app.use(express.json());
@@ -54,6 +55,7 @@ const User = mongoose.model('User', UserSchema);
 const GroupSchema = new mongoose.Schema({
     inviteCode: { type: String, required: true, unique: true },
     groupName: { type: String, required: true },
+    admin: { type: String, required: true },
     members: [{ type: String, ref: 'User' }], // Array of member UIDs
     createdAt: { type: Date, default: Date.now }
 });
@@ -112,6 +114,7 @@ app.post('/signup', async (req, res) => {
       res.json({
         token,
         user: {
+          _id: newUser._id,
           uid: newUser.uid,
           name: newUser.name,
           email: newUser.email,
@@ -158,6 +161,7 @@ app.post('/signin', async (req, res) => {
             message: 'Sign in successful',
             token,
             user: { 
+                _id: user._id,
                 uid: user.uid,
                 name: user.name,
                 email: user.email
@@ -186,21 +190,23 @@ app.post('/demo-object', (request, response) => {
 });
 
 app.post('/create-group', authenticateToken, async (req, res) => {
-    const { groupName } = req.body;
-    const creatorUid = req.user.uid;
+    const { groupName, createdBy} = req.body;
+
+    
     const inviteCode = uuidv4().slice(0, 6).toUpperCase();
 
     try {
         const newGroup = new Group({
             groupName,
-            members: [creatorUid],
+            admin: createdBy,
+            members: [createdBy],
             inviteCode
         });
 
         await newGroup.save();
 
         // Add the group to the creator's groups array
-        const creator = await User.findOne({ uid: creatorUid });
+        const creator = await User.findById(createdBy);
         
         creator.groups.push(inviteCode);
         await creator.save();
@@ -221,23 +227,23 @@ app.post('/create-group', authenticateToken, async (req, res) => {
 });
 
 app.post('/join-group', authenticateToken, async (req, res) => {
-    const { inviteCode } = req.body;
-    const userUid = req.user.uid;
+    const { inviteCode, _id} = req.body;
+    
   
     try {
         const group = await Group.findOne({ inviteCode });
-        const user = await User.findOne({ uid: userUid });
+        const user = await User.findById(_id);
   
         if (!group) {
             return res.status(404).json({ error: 'Invalid invite code' });
         }
 
-        if (group.members.includes(userUid)) {
+        if (group.members.includes(_id)) {
             return res.status(400).json({ error: 'You are already a member of this group' });
         }
   
         // Add user to group's members
-        group.members.push(userUid);
+        group.members.push(_id);
         await group.save();
 
         // Add group to user's groups
@@ -274,6 +280,7 @@ app.get('/user-groups', authenticateToken, async (req, res) => {
         res.json({
             success: true,
             groups: groups.map(group => ({
+                _id: group._id,
                 inviteCode: group.inviteCode,
                 groupName: group.groupName,
                 members: group.members
@@ -313,6 +320,42 @@ app.get('/group/:inviteCode', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching group:', error);
+        res.status(500).json({ error: 'Failed to fetch group details' });
+    }
+});
+
+// Add a new endpoint to get group information by group ID
+app.get('/group-by-id/:groupId', authenticateToken, async (req, res) => {
+    const { groupId } = req.params;
+
+    
+    try {
+        const group = await Group.findById(groupId);
+        
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // Get member details
+        const members = await User.find({ _id: { $in: group.members } }, 'uid name email');
+
+        res.json({
+            success: true,
+            group: {
+                _id: group._id,
+                inviteCode: group.inviteCode,
+                groupName: group.groupName,
+                admin: group.admin,
+                members: members.map(member => ({
+                    _id: member._id,
+                    name: member.name,
+                    email: member.email
+                })),
+                createdAt: group.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching group by ID:', error);
         res.status(500).json({ error: 'Failed to fetch group details' });
     }
 });
@@ -366,6 +409,74 @@ app.get('/api/nearby-places', async (req, res) => {
         });
     }
 });
+app.post('/grouplocations',async(req,res)=>{
+    const { groupId } = req.body;
+    try {
+        // 1. Find the group by its ID
+        const group = await Group.findById(groupId);
+        if (!group) {
+          return res.status(404).json({ error: 'Group not found' });
+        }
+    
+        // 2. Get all user locations based on group members
+        const users = await User.find({ _id: { $in: group.members } }, 'location');
+    
+        // 3. Extract valid lat/lng coordinates
+        const locations = users
+          .filter(user => user.location && user.location.lat !== undefined && user.location.lng !== undefined)
+          .map(user => ({
+            lat: user.location.lat,
+            lng: user.location.lng
+          }));
+    
+        if (locations.length === 0) {
+          return res.status(400).json({ error: 'No valid user locations found' });
+        }
+        res.json(locations);
+    }catch{
+        res.status(500).json({ error: 'Server error while fetching locations.' });
+    }
+})
+app.post('/suggestions', async (req, res) => {
+    const { groupId } = req.body;
+    console.log(groupId);
+  
+    try {
+      // 1. Find the group by its ID
+      const group = await Group.findById(groupId);
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+  
+      // 2. Get all user locations based on group members
+      const users = await User.find({ _id: { $in: group.members } }, 'location');
+  
+      // 3. Extract valid lat/lng coordinates
+      const locations = users
+        .filter(user => user.location && user.location.lat !== undefined && user.location.lng !== undefined)
+        .map(user => ({
+          lat: user.location.lat,
+          lng: user.location.lng
+        }));
+  
+      if (locations.length === 0) {
+        return res.status(400).json({ error: 'No valid user locations found' });
+      }
+  
+      // 4. Calculate centroid
+      const centroid = getCentroid(locations);
+  
+      // 5. Fetch nearby places
+      const places = await getNearbyPlaces(centroid);
+  
+      res.json({ success: true, places, centroid });
+    } catch (error) {
+      console.error('Error in /suggestions:', error);
+      res.status(500).json({ error: 'Server error while fetching suggestions' });
+    }
+  });
+
+
 
 // Token verification endpoint
 app.get('/verify-token', authenticateToken, (req, res) => {

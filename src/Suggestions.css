@@ -8,11 +8,26 @@
 /* Left side - Suggestions Panel */
 .suggestions-panel {
   width: 40%;
-  height: 100%;
   overflow-y: auto;
-  padding: 20px;
+  padding: 2rem;
   background-color: #f8f9fa;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+/* Right side - Map */
+.map-container {
+  width: 60%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Remove debug borders */
+.map-container, .suggestions-panel {
+  border: none;
 }
 
 .suggestions-header {
@@ -67,11 +82,39 @@
   font-weight: bold;
 }
 
+.search-button:hover {
+  background-color: #5d3d7d;
+}
+
+.filters-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .filters {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
+}
+
+.view-suggestions-button {
+  padding: 8px 16px;
+  background-color: #764ba2;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-suggestions-button:hover {
+  background-color: #5d3d7d;
+  transform: translateY(-2px);
 }
 
 .filter-button {
@@ -89,33 +132,47 @@
   color: white;
 }
 
+/* Updated Suggestions List Styling */
 .suggestions-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
 .suggestion-item {
   display: flex;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .suggestion-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .suggestion-image {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   background-size: cover;
   background-position: center;
+  background-color: #f0f0f0;
+  position: relative;
 }
 
+.suggestion-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 70%, rgba(0,0,0,0.3) 100%);
+}
+
+/* Keep the original category background images as fallbacks */
 .suggestion-image.restaurant {
   background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60');
 }
@@ -131,29 +188,68 @@
 .suggestion-details {
   flex: 1;
   padding: 15px;
+  display: flex;
+  flex-direction: column;
 }
 
 .suggestion-details h3 {
   margin: 0 0 5px 0;
   font-size: 1.2rem;
+  color: #333;
+  line-height: 1.3;
 }
 
 .suggestion-type {
   color: #764ba2;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: bold;
   margin: 0 0 5px 0;
+}
+
+.suggestion-rating {
+  color: #f39c12;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin: 0 0 6px 0;
 }
 
 .suggestion-description {
   font-size: 0.9rem;
   color: #666;
   margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.suggestion-website {
+  margin: 0 0 5px 0;
+}
+
+.suggestion-website a {
+  color: #764ba2;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(118, 75, 162, 0.08);
+  transition: all 0.2s;
+}
+
+.suggestion-website a:hover {
+  background-color: rgba(118, 75, 162, 0.15);
+}
+
+.suggestion-price {
+  font-size: 0.85rem;
+  color: #2e7d32;
+  margin: 0;
 }
 
 .suggestion-meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
   font-size: 0.8rem;
 }
 
@@ -166,20 +262,12 @@
   color: #7f8c8d;
 }
 
-/* Right side - Map */
-.map-container {
-  width: 60%;
-  height: 100%;
-  position: relative;
+/* For places with no image */
+.suggestion-item:not(:has(.suggestion-image[style*="url"])) .suggestion-image::before {
+  content: '📍';
+  font-size: 2rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
-
-/* Remove the placeholder styles since we're using the actual map now */
-.map-placeholder {
-  display: none;
-}
-
-.map-note {
-  font-size: 0.8rem;
-  color: #999;
-  margin-top: 10px;
-} 
