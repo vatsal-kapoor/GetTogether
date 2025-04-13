@@ -7,8 +7,8 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 app.use(express.json()); 
-app.use(express.json()); // So Express know you're using JSON
-const cors = require('cors');
+
+
 app.use(cors());
 
 const uri = "mongodb+srv://vatsalkpr:GetTogether%40Hackabull25@gettogether.zlhzkty.mongodb.net/?appName=GetTogether";
@@ -61,6 +61,7 @@ const authenticateToken = (req, res, next) => {
 // Sign Up endpoint
 app.post('/signup', async (req, res) => {
     try {
+        
         const { username, password } = req.body;
 
         // Check if user already exists

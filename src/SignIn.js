@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import { useAuth } from './AuthContext';
 import './SignIn.css';
+
+
+const libraries = ['places'];
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -10,16 +14,46 @@ const SignIn = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    address: '',
+    lat: null,
+    lng: null,
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const autocompleteRef = useRef(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: 'AIzaSyBkP7i-whASB7_Db9q8E9zSsNqCl2wpdYI',
+    libraries,
+  });
+
+  const onPlaceChanged = () => {
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      if (!place.geometry || !place.geometry.location) {
+        setError('No details available for that address.');
+        return;
+      }
+
+      const address = place.formatted_address;
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+
+      setFormData((prev) => ({
+        ...prev,
+        address,
+        lat,
+        lng,
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -28,6 +62,7 @@ const SignIn = () => {
     setError('');
     setIsLoading(true);
 
+
     if (isSignUp && formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setIsLoading(false);
@@ -35,23 +70,33 @@ const SignIn = () => {
     }
 
     try {
-      const endpoint = isSignUp ? 'http://localhost:3000/signup' : 'http://localhost:3000/signin';
-      const response = await fetch(endpoint, {
+      const endpoint = isSignUp
+        ? 'http://localhost:3000/signup'
+        : 'http://localhost:3000/signin';
+
+      const body = isSignUp
+        ? {
+            username: formData.username,
+            password: formData.password,
+            address: formData.address,
+            lat: formData.lat,
+            lng: formData.lng,
+          }
+        : {
+            username: formData.username,
+            password: formData.password,
+          };
+      
+      console.log(body);
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
-      if (!response.ok) {
-        throw new Error(isSignUp ? 'Failed to sign up' : 'Failed to sign in');
-      }
+      if (!res.ok) throw new Error('Something went wrong');
 
-      const data = await response.json();
+      const data = await res.json();
       login(data);
       navigate('/');
     } catch (err) {
@@ -64,72 +109,105 @@ const SignIn = () => {
   return (
     <div className="signin-container">
       <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
-      {error && <div className="error-message">{error}</div>}
-      
+      {error && <p className="error-message">{error}</p>}
+
       <form onSubmit={handleSubmit} className="signin-form">
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+          <label>Username</label>
           <input
-            type="text"
-            id="username"
             name="username"
             value={formData.username}
             onChange={handleChange}
-            required
             placeholder="Enter username"
+            required
             disabled={isLoading}
           />
         </div>
-        
+
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label>Password</label>
           <input
-            type="password"
-            id="password"
             name="password"
+            type="password"
             value={formData.password}
             onChange={handleChange}
-            required
             placeholder="Enter password"
+            required
             disabled={isLoading}
           />
         </div>
-        
+
         {isSignUp && (
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              placeholder="Confirm password"
-              disabled={isLoading}
-            />
-          </div>
+          <>
+            <div className="form-group">
+              <label>Confirm Password</label>
+              <input
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Re-enter password"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Address</label>
+              {isLoaded ? (
+                <Autocomplete
+                  onLoad={(ref) => (autocompleteRef.current = ref)}
+                  onPlaceChanged={onPlaceChanged}
+                  options={{
+                    componentRestrictions: { country: 'us' },
+                    fields: ['address_components', 'geometry', 'formatted_address'],
+                  }}
+                >
+                  <input
+                    name="address"
+                    placeholder="Enter address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className="address-input"
+                    style={{ width: '100%' }}
+                  />
+                </Autocomplete>
+              ) : (
+                <input
+                  placeholder="Loading..."
+                  disabled
+                />
+              )}
+            </div>
+          </>
         )}
-        
+
         <button 
           type="submit" 
-          className="signin-button"
           disabled={isLoading}
+          className="primary-button"
         >
-          {isLoading ? (isSignUp ? 'Signing Up...' : 'Signing In...') : (isSignUp ? 'Sign Up' : 'Sign In')}
+          {isLoading
+            ? isSignUp
+              ? 'Creating Account...'
+              : 'Signing In...'
+            : isSignUp
+            ? 'Sign Up'
+            : 'Sign In'}
         </button>
-        
+
         <button
           type="button"
-          className="toggle-form-button"
-          onClick={() => setIsSignUp(!isSignUp)}
+          onClick={() => setIsSignUp((prev) => !prev)}
           disabled={isLoading}
+          className="secondary-button"
         >
-          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+          {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
         </button>
       </form>
     </div>
   );
 };
 
-export default SignIn; 
+export default SignIn;
