@@ -1,14 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const axios = require('axios');
-const app = express();
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-app.use(express.json()); 
 
-
+const app = express();
+app.use(express.json());
 app.use(cors());
 
 const uri = "mongodb+srv://vatsalkpr:GetTogether%40Hackabull25@gettogether.zlhzkty.mongodb.net/?appName=GetTogether";
@@ -46,6 +45,7 @@ mongoose.connection.on('connected', async () => {
 
 const User = mongoose.model('User', UserSchema);
 
+// Group Schema
 const GroupSchema = new mongoose.Schema({
     inviteCode: { type: String, required: true, unique: true },
     groupName: { type: String, required: true },
@@ -78,12 +78,11 @@ const authenticateToken = (req, res, next) => {
 
 // Sign Up endpoint
 app.post('/signup', async (req, res) => {
+    const { name, email, password } = req.body;
+    
     try {
-        
-        const { username, password } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ username });
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: 'Email already exists' });
         }
@@ -172,9 +171,7 @@ app.get('/', (req, res) => {
 
 // POST a JSON object and get it back
 app.post('/demo-object', (request, response) => {
-
   const body = request.body;
-
   return body;
 });
 
@@ -312,20 +309,15 @@ app.get('/group/:inviteCode', authenticateToken, async (req, res) => {
 
 // GET with the id and get it back
 app.get('/demo-object/:id', (request, response) => {
-  
   const params = request.params;
-
   response.json(params);
 });
 
 // GET with query in the URI and get it back
 app.get('/demo-object', (request, response) => {
-  
   const params = request.query;
-
   response.json(query);
 });
-
 
 // New endpoint to find nearby places
 app.get('/api/nearby-places', async (req, res) => {
@@ -372,4 +364,4 @@ app.get('/verify-token', authenticateToken, (req, res) => {
 
 app.listen(3000, () => {
     console.log(`Server is running on http://localhost:${3000}`);
-  });
+});
