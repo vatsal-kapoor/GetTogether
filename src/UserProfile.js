@@ -10,6 +10,16 @@ const UserProfile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchUserGroups();
@@ -49,7 +59,7 @@ const UserProfile = () => {
         className="profile-button"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {user?.name || 'Profile'}
+        {getInitials(user?.name)}
       </button>
       
       {isOpen && (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import './JoinGroup.css';
+import './CommonStyles.css';
 
 const JoinGroup = () => {
   const navigate = useNavigate();
@@ -9,7 +9,6 @@ const JoinGroup = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,13 +16,16 @@ const JoinGroup = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/join-group', {
+      const response = await fetch('http://localhost:3000/groups/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ inviteCode })
+        body: JSON.stringify({
+          inviteCode,
+          userId: user.uid
+        }),
       });
 
       if (!response.ok) {
@@ -31,11 +33,7 @@ const JoinGroup = () => {
         throw new Error(errorData.error || 'Failed to join group');
       }
 
-      setSuccess(true);
-      // Redirect to suggestions page after a short delay
-      setTimeout(() => {
-        navigate('/suggestions');
-      }, 2000);
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -44,39 +42,32 @@ const JoinGroup = () => {
   };
 
   return (
-    <div className="join-group-container">
-      <h1>Join a Group</h1>
+    <div className="form-container">
+      <h1 className="form-title">Join a Group</h1>
       {error && <div className="error-message">{error}</div>}
       
-      {success ? (
-        <div className="success-container">
-          <h2>Successfully Joined the Group!</h2>
-          <p>Redirecting to suggestions page...</p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="join-group-form">
-          <div className="form-group">
-            <label htmlFor="inviteCode">Invite Code</label>
-            <input
-              type="text"
-              id="inviteCode"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              required
-              placeholder="Enter invite code"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className="join-group-button"
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="inviteCode">Invite Code</label>
+          <input
+            type="text"
+            id="inviteCode"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            required
+            placeholder="Enter invite code"
             disabled={isLoading}
-          >
-            {isLoading ? 'Joining...' : 'Join Group'}
-          </button>
-        </form>
-      )}
+          />
+        </div>
+        
+        <button 
+          type="submit" 
+          className="submit-button"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Joining...' : 'Join Group'}
+        </button>
+      </form>
     </div>
   );
 };

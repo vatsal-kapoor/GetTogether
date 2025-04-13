@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import './SignIn.css';
+import './CommonStyles.css';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -72,11 +72,11 @@ const SignIn = () => {
   };
 
   return (
-    <div className="signin-container">
-      <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
+    <div className="form-container">
+      <h1 className="form-title">{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
       {error && <div className="error-message">{error}</div>}
       
-      <form onSubmit={handleSubmit} className="signin-form">
+      <form onSubmit={handleSubmit}>
         {isSignUp && (
           <div className="form-group">
             <label htmlFor="name">Name</label>
@@ -139,7 +139,7 @@ const SignIn = () => {
         
         <button 
           type="submit" 
-          className="signin-button"
+          className="submit-button"
           disabled={isLoading}
         >
           {isLoading ? (isSignUp ? 'Signing Up...' : 'Signing In...') : (isSignUp ? 'Sign Up' : 'Sign In')}
@@ -147,9 +147,10 @@ const SignIn = () => {
         
         <button
           type="button"
-          className="toggle-form-button"
+          className="submit-button"
           onClick={() => setIsSignUp(!isSignUp)}
           disabled={isLoading}
+          style={{ marginTop: '10px', backgroundColor: '#f5f5f5', color: '#333' }}
         >
           {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
         </button>

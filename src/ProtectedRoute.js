@@ -1,11 +1,12 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import UserProfile from './UserProfile';
 import './ProtectedRoute.css';
 
 const ProtectedRoute = ({ children }) => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return <div className="loading">Loading...</div>;
@@ -18,6 +19,12 @@ const ProtectedRoute = ({ children }) => {
   return (
     <div className="protected-route">
       <div className="header">
+        <img 
+          src={process.env.PUBLIC_URL + "/getTogetherLogo.png"} 
+          alt="GetTogether Logo" 
+          className="logo"
+          onClick={() => navigate('/')}
+        />
         <UserProfile />
       </div>
       <div className="content">

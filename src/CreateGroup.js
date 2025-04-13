@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import './CreateGroup.css';
+import './CommonStyles.css';
 
 const CreateGroup = () => {
   const navigate = useNavigate();
@@ -17,13 +17,16 @@ const CreateGroup = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/create-group', {
+      const response = await fetch('http://localhost:3000/groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ groupName })
+        body: JSON.stringify({
+          name: groupName,
+          createdBy: user.uid
+        }),
       });
 
       if (!response.ok) {
@@ -32,7 +35,7 @@ const CreateGroup = () => {
       }
 
       const data = await response.json();
-      setInviteCode(data.group.inviteCode);
+      setInviteCode(data.inviteCode);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,8 +44,8 @@ const CreateGroup = () => {
   };
 
   return (
-    <div className="create-group-container">
-      <h1>Create a New Group</h1>
+    <div className="form-container">
+      <h1 className="form-title">Create New Group</h1>
       {error && <div className="error-message">{error}</div>}
       
       {inviteCode ? (
@@ -51,14 +54,14 @@ const CreateGroup = () => {
           <p>Share this invite code with your friends:</p>
           <div className="invite-code">{inviteCode}</div>
           <button 
-            className="create-group-button"
-            onClick={() => navigate('/suggestions')}
+            className="submit-button"
+            onClick={() => navigate('/')}
           >
-            Go to Suggestions
+            Go to Home
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="create-group-form">
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="groupName">Group Name</label>
             <input
@@ -74,7 +77,7 @@ const CreateGroup = () => {
           
           <button 
             type="submit" 
-            className="create-group-button"
+            className="submit-button"
             disabled={isLoading}
           >
             {isLoading ? 'Creating...' : 'Create Group'}
