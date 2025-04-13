@@ -83,7 +83,10 @@ const SignIn = () => {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          address: formData.address,
+          lat: formData.lat,
+          lng: formData.lng
         }),
       });
 

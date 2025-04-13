@@ -17,16 +17,16 @@ const CreateGroup = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/groups', {
+      const response = await fetch('http://localhost:3000/create-group', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          name: groupName,
-          createdBy: user.uid
-        }),
+        body: JSON.stringify({ 
+          groupName,
+          createdBy: user.uid 
+        })
       });
 
       if (!response.ok) {
@@ -35,7 +35,7 @@ const CreateGroup = () => {
       }
 
       const data = await response.json();
-      setInviteCode(data.inviteCode);
+      setInviteCode(data.group.inviteCode);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,4 +88,4 @@ const CreateGroup = () => {
   );
 };
 
-export default CreateGroup; 
+export default CreateGroup;

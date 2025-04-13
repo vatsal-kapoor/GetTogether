@@ -25,9 +25,14 @@ const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    groups: [{ type: String }], // Array of group invite codes
+    address: { type: String }, // Optional
+    location: {
+      lat: { type: Number },
+      lng: { type: Number }
+    },
+    groups: [{ type: String }],
     createdAt: { type: Date, default: Date.now }
-});
+  });
 
 // Remove any existing indexes first
 mongoose.connection.on('connected', async () => {
@@ -78,50 +83,55 @@ const authenticateToken = (req, res, next) => {
 
 // Sign Up endpoint
 app.post('/signup', async (req, res) => {
-    const { name, email, password } = req.body;
-    
+    const { name, email, password, address, lat, lng } = req.body;
+  
     try {
-        // Check if email already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email already exists' });
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const uid = uuidv4();
+  
+      const newUser = new User({
+        uid,
+        name,
+        email,
+        password: hashedPassword,
+        address,
+        location: {
+          lat,
+          lng
         }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const uid = uuidv4();
-        
-        const newUser = new User({
-            uid,
-            name,
-            email,
-            password: hashedPassword
-        });
-
-        await newUser.save();
-        
-        const token = jwt.sign({ uid }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({ 
-            token,
-            user: {
-                uid: newUser.uid,
-                name: newUser.name,
-                email: newUser.email
-            }
-        });
+      });
+  
+      await newUser.save();
+  
+      const token = jwt.sign({ uid }, JWT_SECRET, { expiresIn: '24h' });
+      res.json({
+        token,
+        user: {
+          uid: newUser.uid,
+          name: newUser.name,
+          email: newUser.email,
+          address: newUser.address,
+          location: newUser.location
+        }
+      });
     } catch (error) {
-        console.error('Signup error:', error);
-        if (error.code === 11000) {
-            // Handle duplicate key error
-            if (error.keyPattern && error.keyPattern.email) {
-                return res.status(400).json({ error: 'Email already exists' });
-            }
-            if (error.keyPattern && error.keyPattern.uid) {
-                return res.status(500).json({ error: 'Error creating user. Please try again.' });
-            }
+      console.error('Signup error:', error);
+      if (error.code === 11000) {
+        if (error.keyPattern?.email) {
+          return res.status(400).json({ error: 'Email already exists' });
         }
-        res.status(500).json({ error: 'Failed to create user' });
+        if (error.keyPattern?.uid) {
+          return res.status(500).json({ error: 'Error creating user. Please try again.' });
+        }
+      }
+      res.status(500).json({ error: 'Failed to create user' });
     }
-});
+  });
 
 // Sign In endpoint
 app.post('/signin', async (req, res) => {
