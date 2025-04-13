@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 app.use(express.json()); 
-app.use(express.json()); // So Express know you're using JSON
+
 
 app.use(cors());
 
@@ -78,11 +78,12 @@ const authenticateToken = (req, res, next) => {
 
 // Sign Up endpoint
 app.post('/signup', async (req, res) => {
-    const { name, email, password } = req.body;
-    
     try {
-        // Check if email already exists
-        const existingUser = await User.findOne({ email });
+        
+        const { username, password } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ username });
         if (existingUser) {
             return res.status(400).json({ error: 'Email already exists' });
         }

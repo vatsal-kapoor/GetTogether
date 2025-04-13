@@ -48,6 +48,22 @@
   cursor: not-allowed;
 }
 
+/* Ensure the address input field has the same width as other inputs */
+.address-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure Google Places Autocomplete input has the same width as other inputs */
+.form-group .pac-container {
+  width: auto !important;
+  min-width: 100%;
+}
+
+.form-group .pac-container input {
+  width: 100%;
+}
+
 .error-message {
   background-color: #ffebee;
   color: #c62828;
@@ -57,46 +73,79 @@
   text-align: center;
 }
 
-.signin-button {
-  background-color: #007bff;
+/* Primary button styling (Sign In/Sign Up) */
+.signin-form button[type="submit"],
+.primary-button {
+  background-color: #4a6cf7;
   color: white;
-  padding: 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.signin-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.signin-button:active:not(:disabled) {
-  background-color: #004494;
-}
-
-.signin-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.toggle-form-button {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-top: 1rem;
 }
 
-.toggle-form-button:hover:not(:disabled) {
-  text-decoration: underline;
+.signin-form button[type="submit"]:hover:not(:disabled),
+.primary-button:hover:not(:disabled) {
+  background-color: #3a5ce5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.toggle-form-button:disabled {
-  color: #999;
+.signin-form button[type="submit"]:active:not(:disabled),
+.primary-button:active:not(:disabled) {
+  background-color: #2a4cd3;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.signin-form button[type="submit"]:disabled,
+.primary-button:disabled {
+  background-color: #a0a0a0;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Secondary button styling (Toggle between Sign In/Sign Up) */
+.signin-form button[type="button"],
+.secondary-button {
+  background-color: transparent;
+  color: #4a6cf7;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #4a6cf7;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.signin-form button[type="button"]:hover:not(:disabled),
+.secondary-button:hover:not(:disabled) {
+  background-color: rgba(74, 108, 247, 0.1);
+  transform: translateY(-1px);
+}
+
+.signin-form button[type="button"]:active:not(:disabled),
+.secondary-button:active:not(:disabled) {
+  background-color: rgba(74, 108, 247, 0.2);
+  transform: translateY(0);
+}
+
+.signin-form button[type="button"]:disabled,
+.secondary-button:disabled {
+  color: #999;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Remove old button styles that are no longer used */
+.signin-button, .signin-button:hover:not(:disabled), .signin-button:active:not(:disabled), .signin-button:disabled,
+.toggle-form-button, .toggle-form-button:hover:not(:disabled), .toggle-form-button:disabled {
+  /* These styles are now handled by the new selectors above */
 } 
